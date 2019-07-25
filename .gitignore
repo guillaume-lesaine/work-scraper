@@ -1,0 +1,7 @@
+archives
+scraper/scrapy/__pycache__
+scraper/scrapy/spiders/__pycache__
+scraper/geckodriver.log
+scraper/mask.py
+scraper_env
+README.md
