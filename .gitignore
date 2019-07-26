@@ -1,7 +1,8 @@
 archives
-scraper/scrapy/__pycache__
-scraper/scrapy/spiders/__pycache__
-scraper/geckodriver.log
-scraper/mask.py
+scrapy/scraper/__pycache__
+scrapy/scraper/spiders/__pycache__
+scrapy/geckodriver.log
+scrapy/mask.py
 scraper_env
 README.md
+settings.json

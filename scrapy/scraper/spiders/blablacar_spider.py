@@ -13,7 +13,7 @@ class BlablaCarSpider(scrapy.Spider):
         pass
 
     def start_requests(self):
-        search_date ="2019-07-05"
+        search_date ="2019-07-30"
         search_hour = "08"
 
         urls = [
@@ -67,7 +67,7 @@ class BlablaCarSpider(scrapy.Spider):
                     "x-correlation-id": "c2fa8bfc-31c0-4336-81e6-b2de5a84bbc5",
                     "x-client": "SPA|1.0.0",
                     "x-forwarded-proto": "https",
-                    "Authorization": "Bearer 44a9dc05-5bba-4f12-84ca-62f7991573a0",
+                    "Authorization": "Bearer 9cdbe129-cc08-4712-8de9-a6df385b0722",
                     "Origin": "https://www.blablacar.fr",
                     "Connection": "keep-alive",
                     "TE": "Trailers",
