@@ -1,5 +1,7 @@
 archives
+outputs_blablacar
 scrapy/scraper/__pycache__
+scrapy/scraper/pipelines.py
 scrapy/scraper/spiders/__pycache__
 scrapy/geckodriver.log
 scrapy/mask.py
