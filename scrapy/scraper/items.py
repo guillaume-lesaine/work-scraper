@@ -26,24 +26,7 @@ class BlablaCarItem(scrapy.Item):
     price = scrapy.Field()
     driver = scrapy.Field()
     passengers = scrapy.Field()
-
-class LeboncoinItem(scrapy.Item):
-    addition_date = scrapy.Field()
-    seller = scrapy.Field()
-    product = scrapy.Field()
-    price = scrapy.Field()
-
-class DrivyItem(scrapy.Item):
-    owner = scrapy.Field()
-    car = scrapy.Field()
-    price = scrapy.Field()
-
-class VintedItem(scrapy.Item):
-    seller = scrapy.Field()
-    price = scrapy.Field()
-
-class PAPItem(scrapy.Item):
-    pass
+    travel_preferences = scrapy.Field()
 
 class SuperProfItem(scrapy.Item):
     website = scrapy.Field()

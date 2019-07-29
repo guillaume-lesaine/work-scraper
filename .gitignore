@@ -5,6 +5,7 @@ scrapy/scraper/pipelines.py
 scrapy/scraper/spiders/__pycache__
 scrapy/geckodriver.log
 scrapy/mask.py
+scrapy/log.txt
 scraper_env
 README.md
 settings.json

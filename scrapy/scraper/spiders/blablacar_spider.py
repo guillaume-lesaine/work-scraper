@@ -1,39 +1,72 @@
 import scrapy
 from scraper.items import BlablaCarItem
-from scrapy.selector import Selector
+from scrapy.spidermiddlewares.httperror import HttpError
+from scrapy.utils.log import configure_logging  
+import logging 
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 import re
 import json
 
 class BlablaCarSpider(scrapy.Spider):
     name = "blablacar"
+    configure_logging(install_root_handler=False)
+    logging.basicConfig(
+        filename='log.txt',
+        format='%(levelname)s: %(message)s',
+        level=logging.ERROR
+    )
 
     def __init__(self):
         pass
 
     def start_requests(self):
-        search_date ="2019-07-30"
+        urls = []
+        urls_xhr = []
+        search_dates_repetition = []
+
+        current_date = datetime.now()
+        search_dates = [current_date + timedelta(days=i) for i in range(1,2)]
+        search_dates = map(lambda d : datetime.strftime(d, "%Y-%m-%d"), search_dates)
+
         search_hour = "08"
 
-        urls = [
-            f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Marseille%2C%20France&tc=43.296482%2C5.36978&tcc=FR&formatted_to=Marseille&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSk0xUGFSRU9feVJJUklBS1hfYVVaQ0FRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Marseille&searchOrigin=search",
-            f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Strasbourg%2C%20France&tc=48.573405%2C7.752111&tcc=FR&formatted_to=Strasbourg&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSndiSVlYa25JbGtjUkh5VG5HREZJR3BjIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Strasbourg&searchOrigin=search",
-            f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Lille%2C%20France&tc=50.62925%2C3.057256&tcc=FR&formatted_to=Lille&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSkVXNGxzM25Wd2tjUllHTmtnVDd4Q2dRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Lille&searchOrigin=search",
-            f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Rennes%2C%20France&tc=48.117266%2C-1.677792&tcc=FR&formatted_to=Rennes&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSmhaRFdweV9lRGtnUk1LdmtOczJsREFRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Rennes&searchOrigin=search",
-            f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Bordeaux%2C%20France&tc=44.837789%2C-0.57918&tcc=FR&formatted_to=Bordeaux&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSmdjcFI5LWduVlEwUmlYbzVld09HWTNrIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Bordeaux&searchOrigin=search"
-        ]
+        for search_date in search_dates:
 
-        urls_xhr = [
-            lambda x :f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=43.296482%2C5.36978&arrival_address=Marseille%2C%20France&arrival_city=Marseille&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=e87445e6-9879-4a0f-b3a2-df5e7b4f0df4",
-            lambda x :f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=48.573405%2C7.752111&arrival_address=Strasbourg%2C%20France&arrival_city=Strasbourg&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=6581e86d-a199-48b0-8302-096eef3cf1e4",
-            lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=50.62925%2C3.057256&arrival_address=Lille%2C%20France&arrival_city=Lille&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=92eab4bc-a44a-4f46-8feb-53ebf9cb4f3b",
-            lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=48.117266%2C-1.677792&arrival_address=Rennes%2C%20France&arrival_city=Rennes&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=4b6c30a2-7dce-4a8e-bf11-4b44914c07f6",
-            lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=44.837789%2C-0.57918&arrival_address=Bordeaux%2C%20France&arrival_city=Bordeaux&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=c4e71aaf-2354-4cd5-acda-ef535076819c"
-        ]
+            unit_urls = [
+                f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Marseille%2C%20France&tc=43.296482%2C5.36978&tcc=FR&formatted_to=Marseille&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSk0xUGFSRU9feVJJUklBS1hfYVVaQ0FRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Marseille&searchOrigin=search",
+                # f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Strasbourg%2C%20France&tc=48.573405%2C7.752111&tcc=FR&formatted_to=Strasbourg&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSndiSVlYa25JbGtjUkh5VG5HREZJR3BjIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Strasbourg&searchOrigin=search",
+                # f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Lille%2C%20France&tc=50.62925%2C3.057256&tcc=FR&formatted_to=Lille&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSkVXNGxzM25Wd2tjUllHTmtnVDd4Q2dRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Lille&searchOrigin=search",
+                # f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Rennes%2C%20France&tc=48.117266%2C-1.677792&tcc=FR&formatted_to=Rennes&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSmhaRFdweV9lRGtnUk1LdmtOczJsREFRIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Rennes&searchOrigin=search",
+                # f"https://www.blablacar.fr/search?fn=Paris%2C%20France&fc=48.856614%2C2.352221&fcc=FR&formatted_from=Paris&tn=Bordeaux%2C%20France&tc=44.837789%2C-0.57918&tcc=FR&formatted_to=Bordeaux&db={search_date}&hb={search_hour}&departure_location_id=eyJpIjoiQ2hJSkQ3ZmlCaDl1NWtjUllKU01hTU9DQ3dRIiwicCI6MSwidiI6MSwidCI6W119&arrival_location_id=eyJpIjoiQ2hJSmdjcFI5LWduVlEwUmlYbzVld09HWTNrIiwicCI6MSwidiI6MSwidCI6W119&departure_city=Paris&arrival_city=Bordeaux&searchOrigin=search"
+            ]
 
-        for url, url_xhr in zip(urls, urls_xhr):
-            yield scrapy.Request(url=url, callback=self.parse_scroller, meta={"url": url, "url_xhr":url_xhr, "search_date": search_date, "search_hour": search_hour})
+            unit_urls_xhr = [
+                lambda x :f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=43.296482%2C5.36978&arrival_address=Marseille%2C%20France&arrival_city=Marseille&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=e87445e6-9879-4a0f-b3a2-df5e7b4f0df4",
+                # lambda x :f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=48.573405%2C7.752111&arrival_address=Strasbourg%2C%20France&arrival_city=Strasbourg&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=6581e86d-a199-48b0-8302-096eef3cf1e4",
+                # lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=50.62925%2C3.057256&arrival_address=Lille%2C%20France&arrival_city=Lille&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=92eab4bc-a44a-4f46-8feb-53ebf9cb4f3b",
+                # lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=48.117266%2C-1.677792&arrival_address=Rennes%2C%20France&arrival_city=Rennes&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=4b6c30a2-7dce-4a8e-bf11-4b44914c07f6",
+                # lambda x: f"https://edge.blablacar.com/trips/search?departure_address=Paris%2C%20France&departure_coordinates=48.856614%2C2.352221&departure_city=Paris&departure_country_code=FR&arrival_coordinates=44.837789%2C-0.57918&arrival_address=Bordeaux%2C%20France&arrival_city=Bordeaux&arrival_country_code=FR&date_begin={search_date}T{search_hour}:00:00&page={x}&search_tracktor_uuid=c4e71aaf-2354-4cd5-acda-ef535076819c"
+            ]
+
+            urls += unit_urls
+            urls_xhr += unit_urls_xhr
+
+            search_dates_repetition += [search_date for i in range(len(unit_urls))]
+
+        for url, url_xhr, search_date in zip(urls, urls_xhr, search_dates_repetition):
+            yield scrapy.Request(url=url, callback=self.parse_scroller, errback=self.connection_error, meta={"url": url, "url_xhr":url_xhr, "search_date": search_date, "search_hour": search_hour})
+
+    def connection_error(self, failure):
+        if failure.check(HttpError):
+            # these exceptions come from HttpError spider middleware
+            # you can get the non-200 response
+            response = failure.value.response
+            self.logger.error('----- Headers %s', response.headers)
+            self.logger.error('----- Body %s', response.body)
+            self.logger.error('----- Request %s', response.request.headers)
+            self.logger.error('----- Cookies request %s', response.request.headers.getlist('Cookie'))
+            self.logger.error('----- Cookies response %s', response.headers.getlist('Set-Cookie'))
 
     def parse_scroller(self, response):
         zone_information = response.xpath("//div[@class='filtersBar flex fixed large:static']")
@@ -55,7 +88,7 @@ class BlablaCarSpider(scrapy.Spider):
                 method = "GET",
                 headers = {
                     "Host": "edge.blablacar.com",
-                    "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:67.0) Gecko/20100101 Firefox/67.0",
+                    "User-Agent": 'Mozilla/5.0 (X11; Linux x86_64; rv:48.0) Gecko/20100101 Firefox/47.0',
                     "Accept": "application/json",
                     "Accept-Language": "fr_FR",
                     "Accept-Encoding": "gzip, deflate, br",
@@ -67,7 +100,7 @@ class BlablaCarSpider(scrapy.Spider):
                     "x-correlation-id": "f99424f7-1e40-4220-b0e4-a3aa68ac758d",
                     "x-client": "SPA|1.0.0",
                     "x-forwarded-proto": "https",
-                    "Authorization": "Bearer 2fe240b3-460e-4b20-9d50-8c8cbc4c9d67",
+                    "Authorization": "Bearer 1c77b95e-da47-4bed-914a-d896c1ff749b",
                     "Origin": "https://www.blablacar.fr",
                     "Connection": "keep-alive",
                     "TE": "Trailers",
@@ -143,6 +176,10 @@ class BlablaCarSpider(scrapy.Spider):
         zone_car = response.xpath("//section[@class='py-l u-separator-top']")
         car = zone_car.xpath(".//div[@class='kirk-text kirk-text-title kirk-item-title']/text()").get()
         item["car"] = car
+
+        # Travel preferences
+        zone_travel_preferences = zone_car.xpath(".//div[@class='jsx-1542968643 kirk-item-leftText']")
+        item["travel_preferences"] = zone_travel_preferences.xpath(".//div[@class='kirk-text kirk-text-body kirk-item-body']/text()").getall()
 
         # Driver
         driver_url = response.xpath("//a[@class='jsx-1542968643 kirk-item kirk-item--clickable kirk-item-choice']").attrib['href']
