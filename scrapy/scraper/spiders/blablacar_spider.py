@@ -100,7 +100,7 @@ class BlablaCarSpider(scrapy.Spider):
                     "x-correlation-id": "f99424f7-1e40-4220-b0e4-a3aa68ac758d",
                     "x-client": "SPA|1.0.0",
                     "x-forwarded-proto": "https",
-                    "Authorization": "Bearer 805a09bb-7669-4aba-8e52-8d1058d0cb26",
+                    "Authorization": "Bearer 1559a995-ecc9-4d66-a064-ffa66e8ca725",
                     "Origin": "https://www.blablacar.fr",
                     "Connection": "keep-alive",
                     "TE": "Trailers",
